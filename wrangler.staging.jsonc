@@ -1,0 +1,88 @@
+/**
+ * Staging Environment Configuration
+ * Supabase MCP Server - Staging Environment
+ * Use this for testing before production deployment
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "supabase-mcp-server-staging",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-03-10",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"send_metrics": false,
+	"migrations": [
+		{
+			"new_sqlite_classes": [
+				"MyMCP"
+			],
+			"tag": "v1"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "MyMCP",
+				"name": "MCP_OBJECT"
+			}
+		]
+	},
+	"kv_namespaces": [
+		{
+			"binding": "OAUTH_KV",
+			"id": "REPLACE_WITH_YOUR_STAGING_KV_NAMESPACE_ID",
+			"preview_id": "REPLACE_WITH_YOUR_STAGING_PREVIEW_KV_NAMESPACE_ID"
+		},
+		{
+			"binding": "SECURITY_LOGS_KV",
+			"id": "REPLACE_WITH_YOUR_STAGING_SECURITY_KV_NAMESPACE_ID",
+			"preview_id": "REPLACE_WITH_YOUR_STAGING_SECURITY_PREVIEW_KV_NAMESPACE_ID"
+		}
+	],
+	"observability": {
+		"enabled": true
+	},
+	"limits": {
+		"cpu_ms": 30000
+	},
+	"placement": { 
+		"mode": "smart" 
+	},
+	"dev": {
+		"port": 8789,
+		"local_protocol": "https"
+	},
+	"vars": {
+		"NODE_ENV": "staging",
+		"CLAUDE_CODE_INTERFACE": "true",
+		"ENABLE_STREAMING": "true",
+		"MAX_TOOL_CALLS_PER_MINUTE": "30",
+		"ENHANCED_ERROR_HANDLING": "true"
+	}
+
+	/**
+	 * STAGING DEPLOYMENT NOTES:
+	 * 
+	 * 1. Purpose:
+	 *    - Test changes before production
+	 *    - Validate new features with staging database
+	 *    - Performance testing with production-like setup
+	 * 
+	 * 2. Deploy to Staging:
+	 *    wrangler deploy --config wrangler.staging.jsonc
+	 * 
+	 * 3. Staging-specific setup:
+	 *    - Use separate KV namespaces
+	 *    - Use staging Supabase project
+	 *    - Lower rate limits for testing
+	 *    - Separate OAuth app for staging domain
+	 * 
+	 * 4. Testing Checklist:
+	 *    - [ ] OAuth flow works with all Git providers
+	 *    - [ ] Database connectivity and operations
+	 *    - [ ] Security features (rate limiting, validation)
+	 *    - [ ] Claude Code interface optimization
+	 *    - [ ] Error handling and user feedback
+	 */
+}

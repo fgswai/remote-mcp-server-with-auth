@@ -4,17 +4,26 @@ let dbInstance: postgres.Sql | null = null;
 
 /**
  * Get database connection singleton
- * Following the pattern from BASIC-DB-MCP.md but adapted for PostgreSQL with connection pooling
+ * Optimized for Supabase PostgreSQL with Cloudflare Workers
  */
 export function getDb(databaseUrl: string): postgres.Sql {
 	if (!dbInstance) {
 		dbInstance = postgres(databaseUrl, {
-			// Connection pool settings for Cloudflare Workers
-			max: 5, // Maximum 5 connections to fit within Workers' limit of 6 concurrent connections
-			idle_timeout: 20,
+			// Connection pool settings optimized for Supabase + Cloudflare Workers
+			max: 3, // Conservative connection limit for Supabase
+			idle_timeout: 20, 
 			connect_timeout: 10,
 			// Enable prepared statements for better performance
 			prepare: true,
+			// Supabase optimizations
+			ssl: 'require', // Supabase requires SSL
+			transform: {
+				undefined: null, // Handle undefined values properly
+			},
+			// Connection string parsing for Supabase format
+			host_type: 'tcp',
+			// Keepalive settings for better connection stability
+			keepalive: true,
 		});
 	}
 	return dbInstance;
@@ -38,7 +47,10 @@ export async function closeDb(): Promise<void> {
 
 /**
  * Execute a database operation with proper connection management
- * Following the pattern from BASIC-DB-MCP.md but adapted for PostgreSQL
+ * Optimized for Supabase PostgreSQL with enhanced error handling
+ * 
+ * Supabase connection string format:
+ * postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
  */
 export async function withDatabase<T>(
 	databaseUrl: string,
@@ -110,21 +122,186 @@ export function isWriteOperation(sql: string): boolean {
 }
 
 /**
- * Format database error for user-friendly display
+ * Enhanced error formatting for Claude Code interface
+ * Provides detailed, actionable error messages with troubleshooting guidance
  */
-export function formatDatabaseError(error: unknown): string {
+export function formatDatabaseError(error: unknown, context?: string): string {
 	if (error instanceof Error) {
-		// Hide sensitive connection details
-		if (error.message.includes('password')) {
-			return "Database authentication failed. Please check your credentials.";
+		const errorMessage = error.message.toLowerCase();
+		
+		// Authentication errors
+		if (errorMessage.includes('password') || errorMessage.includes('authentication')) {
+			return `**🔐 Database Authentication Failed**
+
+The database rejected your credentials. This could mean:
+- Your DATABASE_URL has an incorrect password
+- Your Supabase project credentials have changed
+- The database user account has been disabled
+
+**Troubleshooting Steps:**
+1. Check your DATABASE_URL in environment variables
+2. Verify your Supabase project is active in the dashboard
+3. Reset your database password in Supabase settings
+4. Ensure you're using the correct project reference in the URL
+
+**Format:** \`postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres\``;
 		}
-		if (error.message.includes('timeout')) {
-			return "Database connection timed out. Please try again.";
+		
+		// Connection timeout errors
+		if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+			return `**⏱️ Database Connection Timeout**
+
+The database connection took too long to establish or complete.
+
+**Common Causes:**
+- Network connectivity issues
+- Supabase project is paused or inactive
+- High database load or maintenance
+- Cloudflare Workers connection limits reached
+
+**Troubleshooting Steps:**
+1. Check Supabase project status in dashboard
+2. Verify your internet connection
+3. Try the operation again in a few minutes
+4. Check Supabase status page for service issues
+5. Consider reducing query complexity`;
 		}
-		if (error.message.includes('connection')) {
-			return "Unable to connect to database. Please check your connection string.";
+		
+		// General connection errors
+		if (errorMessage.includes('connection') || errorMessage.includes('connect')) {
+			return `**🌐 Database Connection Failed**
+
+Unable to establish a connection to your Supabase database.
+
+**Possible Issues:**
+- Incorrect DATABASE_URL format
+- Supabase project doesn't exist or is deleted
+- Network/firewall blocking the connection
+- SSL certificate issues
+
+**Troubleshooting Steps:**
+1. Verify DATABASE_URL format is correct
+2. Check if project exists in Supabase dashboard
+3. Ensure SSL is enabled (Supabase requires it)
+4. Test connection from Supabase SQL editor
+5. Check if project is in correct region`;
 		}
-		return `Database error: ${error.message}`;
+		
+		// SQL syntax errors
+		if (errorMessage.includes('syntax error') || errorMessage.includes('invalid syntax')) {
+			return `**📝 SQL Syntax Error**
+
+Your SQL query contains a syntax error.
+
+**Error Details:** ${error.message}
+
+**Common Syntax Issues:**
+- Missing quotes around string values
+- Incorrect table or column names
+- Invalid SQL keywords or structure
+- Missing semicolons or commas
+
+**Debugging Tips:**
+1. Check table and column names with \`listTables\`
+2. Use SQL examples from \`getSQLExamples\`
+3. Test simpler versions of your query first
+4. Validate query in Supabase SQL editor`;
+		}
+		
+		// Permission/RLS errors
+		if (errorMessage.includes('permission') || errorMessage.includes('policy') || errorMessage.includes('rls')) {
+			return `**🛡️ Database Permission Error**
+
+Row Level Security (RLS) policy or permission restriction.
+
+**Error Details:** ${error.message}
+
+**Supabase RLS Information:**
+- Tables may have Row Level Security policies enabled
+- Policies control which rows users can access
+- Some operations require specific user permissions
+
+**Troubleshooting Steps:**
+1. Check RLS policies in Supabase dashboard
+2. Verify your authentication level and user role
+3. Check if table requires specific user context
+4. Consider disabling RLS for testing (carefully)
+5. Review Supabase Auth documentation`;
+		}
+		
+		// Constraint violation errors
+		if (errorMessage.includes('constraint') || errorMessage.includes('foreign key') || errorMessage.includes('unique')) {
+			return `**⚠️ Database Constraint Violation**
+
+A database constraint prevented your operation.
+
+**Error Details:** ${error.message}
+
+**Common Constraint Types:**
+- **Unique**: Duplicate value in unique column
+- **Foreign Key**: Referenced record doesn't exist
+- **Not Null**: Required field is empty
+- **Check**: Custom validation rule failed
+
+**Resolution Steps:**
+1. Check existing data with SELECT queries
+2. Verify foreign key references exist
+3. Ensure required fields have values
+4. Review table constraints with \`listTables\``;
+		}
+		
+		// Type conversion errors
+		if (errorMessage.includes('invalid input') || errorMessage.includes('type') || errorMessage.includes('cast')) {
+			return `**🔄 Data Type Error**
+
+Data type mismatch or invalid value format.
+
+**Error Details:** ${error.message}
+
+**Common Type Issues:**
+- String values in numeric columns
+- Invalid date/time formats
+- JSON syntax errors in JSONB columns
+- Array format problems
+
+**Solutions:**
+1. Check column data types with \`listTables\`
+2. Validate data formats before insertion
+3. Use proper type casting (::text, ::integer, etc.)
+4. Verify JSON syntax for JSONB columns`;
+		}
+		
+		// Generic error with context
+		const contextInfo = context ? `\n\n**Operation Context:** ${context}` : '';
+		return `**❌ Database Error**
+
+${error.message}${contextInfo}
+
+**General Troubleshooting:**
+1. Try \`testConnection\` to verify database connectivity
+2. Use \`listTables\` to understand your schema
+3. Test with simpler queries first
+4. Check Supabase logs in the dashboard
+5. Contact support if the issue persists
+
+**Need Help?**
+- Use \`getSQLExamples\` for query templates
+- Check \`claudeCodeStatus\` for system information
+- Review Supabase documentation for advanced features`;
 	}
-	return "An unknown database error occurred.";
+	
+	// Unknown error type
+	const contextInfo = context ? ` (Context: ${context})` : '';
+	return `**❓ Unknown Database Error**
+
+An unexpected error occurred${contextInfo}.
+
+**Immediate Actions:**
+1. Try the operation again
+2. Use \`testConnection\` to verify system status
+3. Check \`claudeCodeStatus\` for any known issues
+4. Contact support with error details if problem persists
+
+**Error Type:** ${typeof error}
+**Error Value:** ${String(error)}`;
 }

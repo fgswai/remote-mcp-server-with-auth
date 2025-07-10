@@ -1,0 +1,81 @@
+{
+  "name": "Claude Code MCP Configuration",
+  "description": "Configuration file for integrating Supabase MCP Server with Claude Code",
+  "version": "1.0.0",
+  "mcpServers": {
+    "supabase-mcp-server": {
+      "command": "node",
+      "args": [
+        "-e",
+        "const { spawn } = require('child_process'); const client = spawn('npx', ['@modelcontextprotocol/inspector@latest', '--url', process.env.MCP_SERVER_URL], { stdio: 'inherit' }); client.on('close', (code) => { process.exit(code); });"
+      ],
+      "env": {
+        "MCP_SERVER_URL": "https://supabase-mcp-server.YOUR_SUBDOMAIN.workers.dev/mcp",
+        "CLAUDE_CODE_INTERFACE": "true",
+        "NODE_ENV": "production"
+      }
+    }
+  },
+  "configuration": {
+    "enableClaudeCodeOptimizations": true,
+    "maxConcurrentRequests": 5,
+    "requestTimeout": 30000,
+    "enableDetailedLogging": true,
+    "enableSecurityMonitoring": true
+  },
+  "toolCategories": {
+    "database": {
+      "tools": [
+        "listTables",
+        "queryDatabase",
+        "executeDatabase"
+      ],
+      "description": "Database operations with Supabase PostgreSQL",
+      "safetyLevel": "medium"
+    },
+    "system": {
+      "tools": [
+        "claudeCodeStatus",
+        "testConnection",
+        "securityMonitor",
+        "getSQLExamples"
+      ],
+      "description": "System status and monitoring tools",
+      "safetyLevel": "safe"
+    }
+  },
+  "claudeCodeEnhancements": {
+    "stepByStepGuidance": {
+      "enabled": true,
+      "includeExamples": true,
+      "includeTroubleshooting": true
+    },
+    "errorHandling": {
+      "enhancedMessages": true,
+      "includeFixes": true,
+      "logErrors": true
+    },
+    "userInterface": {
+      "showProgressIndicators": true,
+      "showSecurityWarnings": true,
+      "showPerformanceMetrics": true
+    }
+  },
+  "securitySettings": {
+    "rateLimiting": {
+      "enabled": true,
+      "requestsPerMinute": 60,
+      "burstLimit": 10
+    },
+    "inputValidation": {
+      "enabled": true,
+      "sqlInjectionProtection": true,
+      "maxQueryLength": 50000
+    },
+    "accessControl": {
+      "enabled": true,
+      "requireAuthentication": true,
+      "allowedUsers": ["YOUR_GIT_USERNAME"]
+    }
+  }
+}

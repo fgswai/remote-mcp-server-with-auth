@@ -3,11 +3,25 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy",
     "dev": "wrangler dev",
+    "dev:staging": "wrangler dev --config wrangler.staging.jsonc",
     "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --config wrangler.staging.jsonc",
+    "deploy:production": "wrangler deploy",
+    "setup:kv": "npm run setup:kv:oauth && npm run setup:kv:security",
+    "setup:kv:oauth": "wrangler kv:namespace create \"OAUTH_KV\" && wrangler kv:namespace create \"OAUTH_KV\" --preview",
+    "setup:kv:security": "wrangler kv:namespace create \"SECURITY_LOGS_KV\" && wrangler kv:namespace create \"SECURITY_LOGS_KV\" --preview",
+    "setup:kv:staging": "npm run setup:kv:oauth:staging && npm run setup:kv:security:staging",
+    "setup:kv:oauth:staging": "wrangler kv:namespace create \"OAUTH_KV_STAGING\" && wrangler kv:namespace create \"OAUTH_KV_STAGING\" --preview",
+    "setup:kv:security:staging": "wrangler kv:namespace create \"SECURITY_LOGS_KV_STAGING\" && wrangler kv:namespace create \"SECURITY_LOGS_KV_STAGING\" --preview",
     "cf-typegen": "wrangler types",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test:connection": "echo 'Use MCP Inspector to test: npx @modelcontextprotocol/inspector@latest'",
+    "test:claude": "chmod +x scripts/test-claude-integration.sh && ./scripts/test-claude-integration.sh",
+    "logs": "wrangler tail",
+    "logs:staging": "wrangler tail supabase-mcp-server-staging"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.0.5",

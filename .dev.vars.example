@@ -1,16 +1,28 @@
-GITHUB_CLIENT_ID=<your github client id>
-GITHUB_CLIENT_SECRET=<your github client secret>
-COOKIE_ENCRYPTION_KEY=<your cookie cookie encryption key>
+# Git OAuth Configuration
+# Configure based on your Git provider (GitHub, GitLab, etc.)
+GIT_CLIENT_ID=<your git client id>
+GIT_CLIENT_SECRET=<your git client secret>
+GIT_PROVIDER=github  # Options: github, gitlab, bitbucket
+COOKIE_ENCRYPTION_KEY=<your cookie encryption key>
 
-# Database Connection String
-# This should be a PostgreSQL connection string with full read/write permissions
-# Format: postgresql://username:password@hostname:port/database_name
-# Example: postgresql://user:password@localhost:5432/mydb
-# For production, use Hyperdrive: https://developers.cloudflare.com/hyperdrive/
-DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+# Supabase Database Configuration
+# Get these values from your Supabase project dashboard
+# Format: postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres:<your-password>@db.<your-project-ref>.supabase.co:5432/postgres
+
+# Supabase Additional Configuration (Optional)
+SUPABASE_URL=https://<your-project-ref>.supabase.co
+SUPABASE_ANON_KEY=<your_supabase_anon_key>
+SUPABASE_SERVICE_ROLE_KEY=<your_supabase_service_role_key>
 
 # Optional: Add Sentry DSN for local development monitoring
 # Get your DSN from https://sentry.io/settings/projects/your-project/keys/
 # Create a new project in Sentry, then for the platform pick Cloudflare Workers (search in the top right)
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 NODE_ENV=development
+
+# Claude Code Interface Optimization
+CLAUDE_CODE_INTERFACE=true
+ENABLE_STREAMING=true
+MAX_TOOL_CALLS_PER_MINUTE=60
+ENHANCED_ERROR_HANDLING=true

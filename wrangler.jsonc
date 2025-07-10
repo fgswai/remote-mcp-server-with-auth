@@ -1,15 +1,20 @@
 /**
- * For more details on how to configure Wrangler, refer to:
+ * Production Cloudflare Workers Configuration
+ * Supabase MCP Server with Multi-Provider Git Authentication
+ * Optimized for Claude Code Interface
+ * 
+ * For more details on configuration, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "my-mcp-server",
+	"name": "supabase-mcp-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-10",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"send_metrics": false,
 	"migrations": [
 		{
 			"new_sqlite_classes": [
@@ -29,50 +34,66 @@
 	"kv_namespaces": [
 		{
 			"binding": "OAUTH_KV",
-			"id": "06998ca39ffb4273a10747065041347b"
+			"id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID",
+			"preview_id": "REPLACE_WITH_YOUR_PREVIEW_KV_NAMESPACE_ID"
+		},
+		{
+			"binding": "SECURITY_LOGS_KV",
+			"id": "REPLACE_WITH_YOUR_SECURITY_KV_NAMESPACE_ID",
+			"preview_id": "REPLACE_WITH_YOUR_SECURITY_PREVIEW_KV_NAMESPACE_ID"
 		}
 	],
-	"ai": {
-		"binding": "AI"
-	},
 	"observability": {
 		"enabled": true
 	},
+	"limits": {
+		"cpu_ms": 30000
+	},
+	"placement": { 
+		"mode": "smart" 
+	},
 	"dev": {
-		"port": 8788
+		"port": 8788,
+		"local_protocol": "https"
+	},
+	"vars": {
+		"NODE_ENV": "production",
+		"CLAUDE_CODE_INTERFACE": "true",
+		"ENABLE_STREAMING": "true",
+		"MAX_TOOL_CALLS_PER_MINUTE": "60",
+		"ENHANCED_ERROR_HANDLING": "true"
 	}
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": { "mode": "smart" },
 
 	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 * PRODUCTION DEPLOYMENT NOTES:
+	 * 
+	 * 1. KV Namespaces Setup:
+	 *    Run these commands to create KV namespaces:
+	 *    wrangler kv:namespace create "OAUTH_KV"
+	 *    wrangler kv:namespace create "OAUTH_KV" --preview
+	 *    wrangler kv:namespace create "SECURITY_LOGS_KV"
+	 *    wrangler kv:namespace create "SECURITY_LOGS_KV" --preview
+	 *    
+	 *    Then replace the placeholder IDs above with the actual namespace IDs.
+	 * 
+	 * 2. Required Secrets (use wrangler secret put):
+	 *    - GIT_CLIENT_ID: Your Git provider OAuth client ID
+	 *    - GIT_CLIENT_SECRET: Your Git provider OAuth client secret
+	 *    - GIT_PROVIDER: git provider (github, gitlab, bitbucket)
+	 *    - DATABASE_URL: Your Supabase connection string
+	 *    - COOKIE_ENCRYPTION_KEY: Random encryption key (openssl rand -hex 32)
+	 *    - SENTRY_DSN: Optional Sentry monitoring (if using)
+	 * 
+	 * 3. Deployment Commands:
+	 *    Development: wrangler dev
+	 *    Production: wrangler deploy
+	 * 
+	 * 4. Custom Domain (Optional):
+	 *    Configure custom domain in Cloudflare dashboard after deployment
+	 * 
+	 * 5. Performance Optimizations:
+	 *    - Smart Placement enabled for better global performance
+	 *    - CPU limit set to 30 seconds for complex operations
+	 *    - Observability enabled for monitoring
 	 */
-
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" },
-
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
 }

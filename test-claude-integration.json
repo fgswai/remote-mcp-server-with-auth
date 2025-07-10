@@ -1,0 +1,93 @@
+{
+  "name": "Supabase MCP Server Test Configuration",
+  "description": "Test configuration for Claude Code integration with Supabase MCP Server",
+  "version": "1.0.0",
+  "mcpServers": {
+    "supabase-mcp-server": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/inspector@latest", "--url", "https://supabase-mcp-server.YOUR_SUBDOMAIN.workers.dev/mcp"],
+      "env": {
+        "NODE_ENV": "production",
+        "CLAUDE_CODE_INTERFACE": "true"
+      }
+    }
+  },
+  "testCases": [
+    {
+      "name": "Connection Test",
+      "description": "Test basic MCP server connectivity",
+      "tool": "claudeCodeStatus",
+      "expectedResponse": {
+        "status": "operational",
+        "interface": "claude-code",
+        "provider": "supabase"
+      }
+    },
+    {
+      "name": "Database Connection Test",
+      "description": "Test Supabase database connectivity",
+      "tool": "testConnection",
+      "expectedResponse": {
+        "connected": true,
+        "database": "supabase"
+      }
+    },
+    {
+      "name": "Table Listing Test",
+      "description": "Test listing database tables",
+      "tool": "listTables",
+      "expectedResponse": {
+        "success": true,
+        "tables": "array"
+      }
+    },
+    {
+      "name": "SQL Query Test",
+      "description": "Test basic SQL query functionality",
+      "tool": "queryDatabase",
+      "input": {
+        "query": "SELECT 1 as test_value"
+      },
+      "expectedResponse": {
+        "success": true,
+        "result": [{"test_value": 1}]
+      }
+    },
+    {
+      "name": "Security Monitor Test",
+      "description": "Test security monitoring functionality",
+      "tool": "securityMonitor",
+      "expectedResponse": {
+        "monitoring": "active",
+        "features": "array"
+      }
+    }
+  ],
+  "claudeCodeOptimizations": {
+    "stepByStepGuidance": true,
+    "detailedErrorHandling": true,
+    "enhancedToolDescriptions": true,
+    "progressIndicators": true,
+    "troubleshootingTips": true
+  },
+  "securityTests": [
+    {
+      "name": "Rate Limiting Test",
+      "description": "Test rate limiting functionality",
+      "method": "rapid_requests",
+      "expectedBehavior": "rate_limit_triggered"
+    },
+    {
+      "name": "SQL Injection Protection Test",
+      "description": "Test SQL injection protection",
+      "maliciousInput": "SELECT * FROM users; DROP TABLE users; --",
+      "expectedBehavior": "blocked_with_security_log"
+    },
+    {
+      "name": "Access Control Test",
+      "description": "Test user access controls",
+      "method": "unauthorized_write_attempt",
+      "expectedBehavior": "access_denied"
+    }
+  ]
+}
